@@ -48,10 +48,10 @@ public class AuthService {
             .build();
     }
 
-    /** Crea el usuario admin inicial si no existe ningún usuario. */
+    /** Crea el usuario admin inicial si no existe. */
     @Transactional
     public void inicializarAdminSiEsNecesario(PasswordEncoder encoder) {
-        if (usuarioRepository.count() == 0) {
+        if (usuarioRepository.findByUsername("samuel.partida").isEmpty()) {
             usuarioRepository.save(Usuario.builder()
                 .username("samuel.partida")
                 .password(encoder.encode("samuel.partida"))
