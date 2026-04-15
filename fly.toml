@@ -16,6 +16,14 @@ primary_region = 'iad'
   min_machines_running = 0
   processes = ['app']
 
+  [[http_service.checks]]
+    grace_period = "60s"
+    interval = "15s"
+    method = "GET"
+    path = "/api/actuator/health"
+    port = 8080
+    timeout = "10s"
+
 [[vm]]
   memory = '1gb'
   cpu_kind = 'shared'
