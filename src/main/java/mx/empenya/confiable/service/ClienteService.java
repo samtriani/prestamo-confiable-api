@@ -76,9 +76,12 @@ public class ClienteService {
         Cliente c    = p.getCliente();
         List<Pago> pagos = p.getPagos() != null ? p.getPagos() : List.of();
 
-        int pagosCubiertos = (int) pagos.stream()
-            .filter(pag -> pag.getEstado() == EstadoPago.PAGADO
-                        || pag.getEstado() == EstadoPago.PAGADO_SIN_CORTE)
+        int pagosSinCorte = (int) pagos.stream()
+            .filter(pag -> pag.getEstado() == EstadoPago.PAGADO_SIN_CORTE)
+            .count();
+
+        int pagosCubiertos = pagosSinCorte + (int) pagos.stream()
+            .filter(pag -> pag.getEstado() == EstadoPago.PAGADO)
             .count();
 
         int pagosAtrasados = (int) pagos.stream()
@@ -118,6 +121,7 @@ public class ClienteService {
             .updatedAt(p.getUpdatedAt())
             .totalPagos(TOTAL_PAGOS)
             .pagosCubiertos(pagosCubiertos)
+            .pagosSinCorte(pagosSinCorte)
             .pagosAtrasados(pagosAtrasados)
             .totalAbonado(totalAbonado)
             .saldoPendiente(saldoPendiente)

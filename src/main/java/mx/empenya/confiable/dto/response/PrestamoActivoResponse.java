@@ -26,6 +26,7 @@ public class PrestamoActivoResponse {
     private LocalDateTime updatedAt;
     private int        totalPagos;
     private int        pagosCubiertos;
+    private int        pagosSinCorte;
     private int        pagosAtrasados;
     private BigDecimal totalAbonado;
     private BigDecimal saldoPendiente;
