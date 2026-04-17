@@ -42,7 +42,7 @@ spring:
 app:
   jwt:
     secret: ${JWT_SECRET:empenya-confiable-super-secret-key-2026-must-be-32chars-min}
-    expiration-ms: ${JWT_EXPIRATION_MS:86400000}   # 24h
+    expiration-ms: ${JWT_EXPIRATION_MS:604800000}   # 7 días
 
 management:
   endpoints:
