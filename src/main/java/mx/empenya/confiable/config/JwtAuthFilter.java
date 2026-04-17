@@ -1,11 +1,13 @@
 package mx.empenya.confiable.config;
 
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import mx.empenya.confiable.repository.UsuarioRepository;
+import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -35,8 +37,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        String token    = authHeader.substring(7);
-        String username = jwtService.extractUsername(token);
+        String token = authHeader.substring(7);
+        String username;
+
+        try {
+            username = jwtService.extractUsername(token);
+        } catch (JwtException e) {
+            // Token expirado o inválido → 401 limpio, sin stack trace en logs
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.getWriter().write("{\"error\":\"Token expirado o inválido\"}");
+            return;
+        }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             usuarioRepository.findByUsername(username).ifPresent(usuario -> {

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import mx.empenya.confiable.enums.EstadoPago;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcType;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -60,5 +61,6 @@ public class Pago {
     @JsonIgnore
     @OneToMany(mappedBy = "pago", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @OrderBy("fecha_abono ASC")
+    @BatchSize(size = 200)
     private List<Abono> abonos;
 }

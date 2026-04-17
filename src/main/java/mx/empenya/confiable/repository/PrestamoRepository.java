@@ -13,12 +13,12 @@ import java.util.UUID;
 @Repository
 public interface PrestamoRepository extends JpaRepository<Prestamo, UUID> {
 
-    /** Historial completo del cliente: activos + liquidados, del más reciente al más antiguo. */
-    @Query("SELECT p FROM Prestamo p JOIN FETCH p.cliente WHERE p.cliente.id = :clienteId ORDER BY p.createdAt DESC")
+    /** Historial completo del cliente con pagos precargados. Abonos se cargan en batch por @BatchSize. */
+    @Query("SELECT DISTINCT p FROM Prestamo p JOIN FETCH p.cliente JOIN FETCH p.pagos WHERE p.cliente.id = :clienteId ORDER BY p.createdAt DESC")
     List<Prestamo> findByClienteIdOrderByCreatedAtDesc(@Param("clienteId") UUID clienteId);
 
-    /** Solo préstamos activos — cliente cargado eager, pagos lazy dentro de @Transactional. */
-    @Query("SELECT p FROM Prestamo p JOIN FETCH p.cliente WHERE p.activo = true ORDER BY p.createdAt DESC")
+    /** Préstamos activos con cliente y pagos en una sola query. Abonos se cargan en batch por @BatchSize. */
+    @Query("SELECT DISTINCT p FROM Prestamo p JOIN FETCH p.cliente JOIN FETCH p.pagos WHERE p.activo = true ORDER BY p.createdAt DESC")
     List<Prestamo> findPrestamosActivosConDetalle();
 
     long countByActivoTrue();
