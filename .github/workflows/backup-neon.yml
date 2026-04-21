@@ -1,0 +1,31 @@
+name: 🗄️ Backup Semanal Neon DB
+
+on:
+  schedule:
+    - cron: '0 12 * * 1'  # Cada lunes a las 6am CDMX (UTC-6)
+  workflow_dispatch:        # Para correrlo manual cuando quieras
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📦 Instalar PostgreSQL client
+        run: sudo apt-get install -y postgresql-client
+
+      - name: 🔄 Generar backup
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+        run: |
+          pg_dump "$DATABASE_URL" \
+            --no-owner \
+            --no-acl \
+            --format=custom \
+            -f backup_$(date +%Y%m%d).dump
+
+      - name: ☁️ Subir backup como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: neon-backup-${{ github.run_number }}-${{ github.run_id }}
+          path: "*.dump"
+          retention-days: 30
