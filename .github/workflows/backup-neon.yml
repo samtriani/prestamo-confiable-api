@@ -2,16 +2,25 @@ name: 🗄️ Backup Semanal Neon DB
 
 on:
   schedule:
-    - cron: '0 12 * * 1'  # Cada lunes a las 6am CDMX (UTC-6)
-  workflow_dispatch:        # Para correrlo manual cuando quieras
+    - cron: '0 12 * * 1'
+  workflow_dispatch:
 
 jobs:
   backup:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📦 Instalar PostgreSQL client
-        run: sudo apt-get install -y postgresql-client
+      - name: 📦 Instalar PostgreSQL 17 client
+        run: |
+          sudo apt-get install -y curl ca-certificates
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo gpg --dearmor -o /usr/share/keyrings/postgresql.gpg
+          echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] \
+            https://apt.postgresql.org/pub/repos/apt \
+            $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
 
       - name: 🔄 Generar backup
         env:
