@@ -123,8 +123,12 @@ public class AbonoService {
                 .filter(p -> p.getEstado() == EstadoPago.PENDIENTE || p.getEstado() == EstadoPago.ATRASADO)
                 .findFirst()
                 .ifPresent(p -> {
-                    p.setEstado(EstadoPago.PROXIMO);
-                    pagoRepository.save(p);
+                    // Solo marcar como PROXIMO si su fecha aún no ha vencido
+                    // Si ya venció, mantenerlo como ATRASADO
+                    if (!p.getFechaProgramada().isBefore(LocalDateTime.now().toLocalDate())) {
+                        p.setEstado(EstadoPago.PROXIMO);
+                        pagoRepository.save(p);
+                    }
                 });
         }
 
