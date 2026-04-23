@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import mx.empenya.confiable.dto.request.ClienteRequest;
+import mx.empenya.confiable.dto.request.ClienteUpdateRequest;
 import mx.empenya.confiable.dto.response.PrestamoActivoResponse;
 import mx.empenya.confiable.entity.Cliente;
 import mx.empenya.confiable.entity.Prestamo;
@@ -49,6 +50,14 @@ public class ClienteController {
     @PostMapping
     public ResponseEntity<Cliente> alta(@Valid @RequestBody ClienteRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(clienteService.altaCliente(request));
+    }
+
+    @Operation(summary = "Actualizar teléfono y/o domicilio de un cliente")
+    @PutMapping("/{id}")
+    public ResponseEntity<Cliente> actualizar(
+            @PathVariable UUID id,
+            @Valid @RequestBody ClienteUpdateRequest request) {
+        return ResponseEntity.ok(clienteService.actualizarCliente(id, request));
     }
 
     @Operation(summary = "Préstamos activos de todos los clientes")

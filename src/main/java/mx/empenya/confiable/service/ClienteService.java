@@ -3,6 +3,7 @@ package mx.empenya.confiable.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import mx.empenya.confiable.dto.request.ClienteRequest;
+import mx.empenya.confiable.dto.request.ClienteUpdateRequest;
 import mx.empenya.confiable.dto.response.PrestamoActivoResponse;
 import mx.empenya.confiable.entity.Abono;
 import mx.empenya.confiable.entity.Cliente;
@@ -128,6 +129,24 @@ public class ClienteService {
             .semanalSinCorte(semanalSinCorte)
             .totalARecuperar(totalARecuperar)
             .build();
+    }
+
+    // ── Actualizar datos de contacto ──────────────────────────────
+
+    @Transactional
+    public Cliente actualizarCliente(UUID id, ClienteUpdateRequest request) {
+        Cliente cliente = clienteRepository.findById(id)
+            .orElseThrow(() -> BusinessException.notFound("Cliente", id.toString()));
+
+        if (request.getTelefono() != null) {
+            cliente.setTelefono(request.getTelefono().isBlank() ? null : request.getTelefono().trim());
+        }
+        if (request.getDomicilio() != null) {
+            cliente.setDomicilio(request.getDomicilio().isBlank() ? null : request.getDomicilio().trim());
+        }
+
+        log.info("Cliente actualizado: {}", cliente.getNumero());
+        return clienteRepository.save(cliente);
     }
 
     // ── Alta cliente nuevo (primer préstamo) ──────────────────────
