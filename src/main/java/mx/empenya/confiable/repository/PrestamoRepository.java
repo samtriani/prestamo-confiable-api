@@ -35,4 +35,19 @@ public interface PrestamoRepository extends JpaRepository<Prestamo, UUID> {
 
     @Query("SELECT COALESCE(SUM(p.monto), 0) FROM Prestamo p")
     BigDecimal sumMontoHistorico();
+
+    @Query("SELECT COALESCE(SUM(p.monto), 0) FROM Prestamo p WHERE p.activo = true")
+    BigDecimal sumMontoActivosTotal();
+
+    /** Monto prestado y cantidad de préstamos agrupados por mes (YYYY-MM). */
+    @Query(value = """
+            SELECT TO_CHAR(fecha_inicio, 'YYYY-MM') AS mes,
+                   COUNT(*)                         AS cantidad,
+                   SUM(monto)                       AS total
+            FROM prestamos
+            WHERE numero NOT LIKE 'MIG-%'
+            GROUP BY TO_CHAR(fecha_inicio, 'YYYY-MM')
+            ORDER BY mes
+            """, nativeQuery = true)
+    List<Object[]> findPrestamosPorMes();
 }
