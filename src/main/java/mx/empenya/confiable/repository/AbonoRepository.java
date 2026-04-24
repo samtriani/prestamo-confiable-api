@@ -33,4 +33,24 @@ public interface AbonoRepository extends JpaRepository<Abono, UUID> {
     int asignarCorteATodosLosPendientes(@Param("corteId") UUID corteId);
 
     long countByCorteIdIsNull();
+
+    /** Total abonado sobre préstamos activos (para calcular saldo pendiente de cartera). */
+    @Query(value = """
+            SELECT COALESCE(SUM(a.monto_abono), 0)
+            FROM abonos a
+            JOIN pagos pag ON a.pago_id = pag.id
+            JOIN prestamos p ON pag.prestamo_id = p.id
+            WHERE p.activo = true
+            """, nativeQuery = true)
+    BigDecimal sumAbonadoEnActivos();
+
+    /** Monto recuperado agrupado por mes (YYYY-MM). */
+    @Query(value = """
+            SELECT TO_CHAR(CAST(fecha_abono AS DATE), 'YYYY-MM') AS mes,
+                   SUM(monto_abono)                               AS total
+            FROM abonos
+            GROUP BY TO_CHAR(CAST(fecha_abono AS DATE), 'YYYY-MM')
+            ORDER BY mes
+            """, nativeQuery = true)
+    List<Object[]> findAbonosPorMes();
 }
