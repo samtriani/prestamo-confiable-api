@@ -34,6 +34,17 @@ public interface AbonoRepository extends JpaRepository<Abono, UUID> {
 
     long countByCorteIdIsNull();
 
+    /** Abonos de un corte con cliente, préstamo y pago precargados para el reporte PDF. */
+    @Query("""
+            SELECT a FROM Abono a
+            JOIN FETCH a.pago p
+            JOIN FETCH p.prestamo pr
+            JOIN FETCH pr.cliente c
+            WHERE a.corte.id = :corteId
+            ORDER BY c.numero ASC, p.numeroPago ASC
+            """)
+    List<Abono> findByCorteIdConDetalle(@Param("corteId") UUID corteId);
+
     /** Total abonado sobre préstamos activos (para calcular saldo pendiente de cartera). */
     @Query(value = """
             SELECT COALESCE(SUM(a.monto_abono), 0)
