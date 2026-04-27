@@ -11,6 +11,7 @@ import mx.empenya.confiable.exception.BusinessException;
 import mx.empenya.confiable.repository.AbonoRepository;
 import mx.empenya.confiable.repository.CorteRepository;
 import mx.empenya.confiable.repository.PagoRepository;
+import mx.empenya.confiable.repository.PrestamoRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,16 +19,20 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class CorteService {
 
-    private final CorteRepository corteRepository;
-    private final AbonoRepository abonoRepository;
-    private final PagoRepository pagoRepository;
-    private final AbonoService abonoService;
+    private final CorteRepository    corteRepository;
+    private final AbonoRepository    abonoRepository;
+    private final PagoRepository     pagoRepository;
+    private final PrestamoRepository prestamoRepository;
+    private final AbonoService       abonoService;
 
     /**
      * Realiza el corte semanal:
@@ -67,6 +72,23 @@ public class CorteService {
             pagoRepository.save(pago);
         });
         log.info("{} pagos marcados como PAGADO tras el corte", pagosNaranja.size());
+
+        // Marcar como inactivos los préstamos donde todos los pagos quedaron PAGADO
+        Set<UUID> prestamosAfectados = pagosNaranja.stream()
+                .map(p -> p.getPrestamo().getId())
+                .collect(Collectors.toSet());
+
+        prestamosAfectados.forEach(prestamoId -> {
+            List<Pago> todos = pagoRepository.findByPrestamoIdOrderByNumeroPagoAsc(prestamoId);
+            boolean todosPagado = todos.stream().allMatch(p -> p.getEstado() == EstadoPago.PAGADO);
+            if (todosPagado) {
+                prestamoRepository.findById(prestamoId).ifPresent(prestamo -> {
+                    prestamo.setActivo(false);
+                    prestamoRepository.save(prestamo);
+                    log.info("Préstamo {} liquidado completamente tras corte.", prestamo.getNumero());
+                });
+            }
+        });
 
         return corte;
     }
