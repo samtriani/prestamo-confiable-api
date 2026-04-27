@@ -132,16 +132,9 @@ public class AbonoService {
                 });
         }
 
-        // Verificar si el préstamo quedó liquidado (todos los pagos cubiertos)
-        boolean todosLiquidados = pagosDelPrestamo.stream()
-            .allMatch(p -> p.getEstado() == EstadoPago.PAGADO || p.getEstado() == EstadoPago.PAGADO_SIN_CORTE);
-
-        if (todosLiquidados) {
-            Prestamo prestamo = pagoActual.getPrestamo();
-            prestamo.setActivo(false);
-            prestamoRepository.save(prestamo);
-            log.info("Préstamo {} liquidado completamente.", prestamo.getNumero());
-        }
+        // El préstamo se marca inactivo solo cuando todos los pagos están PAGADO
+        // (ya pasaron por corte). Si quedan en PAGADO_SIN_CORTE el préstamo sigue
+        // visible en Control de Pagos hasta que el corte los cierre.
     }
 
     @Transactional(readOnly = true)
