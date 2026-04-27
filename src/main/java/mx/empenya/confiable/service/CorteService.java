@@ -3,6 +3,7 @@ package mx.empenya.confiable.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import mx.empenya.confiable.dto.request.CorteRequest;
+import mx.empenya.confiable.dto.response.CorteAbonoItem;
 import mx.empenya.confiable.dto.response.CorteDetalleResponse;
 import mx.empenya.confiable.entity.Corte;
 import mx.empenya.confiable.entity.Pago;
@@ -91,6 +92,31 @@ public class CorteService {
         });
 
         return corte;
+    }
+
+    @Transactional(readOnly = true)
+    public List<CorteAbonoItem> findAbonosDetalle(UUID corteId) {
+        if (!corteRepository.existsById(corteId)) {
+            throw BusinessException.notFound("Corte", corteId.toString());
+        }
+        return abonoRepository.findByCorteIdConDetalle(corteId)
+                .stream()
+                .map(a -> {
+                    var pago     = a.getPago();
+                    var prestamo = pago.getPrestamo();
+                    var cliente  = prestamo.getCliente();
+                    return CorteAbonoItem.builder()
+                            .clienteNumero(cliente.getNumero())
+                            .clienteNombre(cliente.getNombre())
+                            .clienteTelefono(cliente.getTelefono())
+                            .prestamoNumero(prestamo.getNumero())
+                            .prestaMonto(prestamo.getMonto())
+                            .numeroPago(pago.getNumeroPago())
+                            .montoAbono(a.getMontoAbono())
+                            .fechaAbono(a.getFechaAbono())
+                            .build();
+                })
+                .toList();
     }
 
     @Transactional(readOnly = true)

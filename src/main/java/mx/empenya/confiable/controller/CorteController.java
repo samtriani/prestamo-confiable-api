@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import mx.empenya.confiable.dto.request.CorteRequest;
+import mx.empenya.confiable.dto.response.CorteAbonoItem;
 import mx.empenya.confiable.dto.response.CorteDetalleResponse;
 import mx.empenya.confiable.entity.Corte;
 import mx.empenya.confiable.service.CorteService;
@@ -48,5 +49,11 @@ public class CorteController {
     @GetMapping("/{id}")
     public ResponseEntity<CorteDetalleResponse> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(corteService.findById(id));
+    }
+
+    @Operation(summary = "Abonos detallados de un corte — para reporte PDF")
+    @GetMapping("/{id}/abonos")
+    public ResponseEntity<List<CorteAbonoItem>> findAbonos(@PathVariable UUID id) {
+        return ResponseEntity.ok(corteService.findAbonosDetalle(id));
     }
 }
