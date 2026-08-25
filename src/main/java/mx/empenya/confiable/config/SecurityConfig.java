@@ -41,8 +41,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                 // actuator/docs públicos
                 .requestMatchers("/actuator/**", "/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                // CLIENTE: solo su crédito
-                .requestMatchers(HttpMethod.GET, "/auth/mi-credito").hasRole("CLIENTE")
+                // CLIENTE: solo su crédito y la corrida de pagos de ese crédito.
+                // El patrón /** es necesario para /auth/mi-credito/pagos, que de
+                // otro modo caería en la regla de abajo que bloquea a CLIENTE.
+                .requestMatchers(HttpMethod.GET, "/auth/mi-credito", "/auth/mi-credito/**").hasRole("CLIENTE")
                 // cortes: solo ADMIN puede crear
                 .requestMatchers(HttpMethod.POST, "/cortes").hasRole("ADMIN")
                 // gestión usuarios: solo ADMIN
