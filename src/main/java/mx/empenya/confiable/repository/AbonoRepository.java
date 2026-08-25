@@ -14,13 +14,53 @@ import java.util.UUID;
 @Repository
 public interface AbonoRepository extends JpaRepository<Abono, UUID> {
 
-    List<Abono> findByPagoIdOrderByFechaAbonoAsc(UUID pagoId);
+    // Ojo: la entidad Abono expone getPagoId()/getCorteId() para el JSON del
+    // front. Eso hace que Spring Data interprete "...ByPagoId"/"...ByCorteId"
+    // como una propiedad plana inexistente en el modelo JPA, así que estas
+    // consultas van con @Query explícito en lugar de derivarse del nombre.
+
+
+    @Query("""
+            SELECT a FROM Abono a
+            WHERE a.pago.id = :pagoId
+            ORDER BY a.fechaAbono ASC
+            """)
+    List<Abono> findByPagoIdOrderByFechaAbonoAsc(@Param("pagoId") UUID pagoId);
 
     // Abonos pendientes de corte (naranja)
+    @Query("""
+            SELECT a FROM Abono a
+            WHERE a.corte IS NULL
+            ORDER BY a.fechaAbono ASC
+            """)
     List<Abono> findByCorteIdIsNullOrderByFechaAbonoAsc();
 
     @Query("SELECT COALESCE(SUM(a.montoAbono), 0) FROM Abono a WHERE a.pago.id = :pagoId")
     BigDecimal sumMontoByPagoId(@Param("pagoId") UUID pagoId);
+
+    /**
+     * Totales por pago para un conjunto de pagos, en una sola consulta.
+     * Devuelve filas [pagoId, sumaAbonada, numAbonos, abonosSinCorte].
+     * Evita el N+1 al enriquecer corridas de 14 pagos o la cobranza semanal.
+     */
+    @Query("""
+            SELECT a.pago.id,
+                   COALESCE(SUM(a.montoAbono), 0),
+                   COUNT(a),
+                   SUM(CASE WHEN a.corte IS NULL THEN 1 ELSE 0 END)
+            FROM Abono a
+            WHERE a.pago.id IN :pagoIds
+            GROUP BY a.pago.id
+            """)
+    List<Object[]> sumTotalesByPagoIds(@Param("pagoIds") List<UUID> pagoIds);
+
+    /** Abonos de varios pagos de un jalón, ordenados por fecha. */
+    @Query("""
+            SELECT a FROM Abono a
+            WHERE a.pago.id IN :pagoIds
+            ORDER BY a.fechaAbono ASC
+            """)
+    List<Abono> findByPagoIdsOrderByFechaAbonoAsc(@Param("pagoIds") List<UUID> pagoIds);
 
     @Query("SELECT COALESCE(SUM(a.montoAbono), 0) FROM Abono a WHERE a.corte.id IS NULL")
     BigDecimal sumTotalSemanalActual();
@@ -32,6 +72,7 @@ public interface AbonoRepository extends JpaRepository<Abono, UUID> {
     @Query("UPDATE Abono a SET a.corte = (SELECT c FROM Corte c WHERE c.id = :corteId) WHERE a.corte IS NULL")
     int asignarCorteATodosLosPendientes(@Param("corteId") UUID corteId);
 
+    @Query("SELECT COUNT(a) FROM Abono a WHERE a.corte IS NULL")
     long countByCorteIdIsNull();
 
     /** Abonos de un corte con cliente, préstamo y pago precargados para el reporte PDF. */

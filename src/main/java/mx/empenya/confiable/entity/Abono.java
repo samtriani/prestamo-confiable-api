@@ -1,6 +1,7 @@
 package mx.empenya.confiable.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -42,4 +43,25 @@ public class Abono {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    // ── Campos derivados para el front ────────────────────────────
+    // pago y corte van con @JsonIgnore para no arrastrar el grafo completo,
+    // pero el front necesita los identificadores y saber si el abono ya
+    // entró a corte. Leer solo el id de un proxy lazy no dispara consulta.
+
+    @JsonProperty("pagoId")
+    public UUID getPagoId() {
+        return pago != null ? pago.getId() : null;
+    }
+
+    @JsonProperty("corteId")
+    public UUID getCorteId() {
+        return corte != null ? corte.getId() : null;
+    }
+
+    /** false = pendiente de corte (naranja). */
+    @JsonProperty("enCorte")
+    public boolean isEnCorte() {
+        return corte != null;
+    }
 }

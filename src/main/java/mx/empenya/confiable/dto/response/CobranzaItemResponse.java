@@ -19,6 +19,14 @@ public class CobranzaItemResponse {
     private String  estado;        // "PROXIMO" | "ATRASADO"
     private int     diasVencido;   // 0 si PROXIMO
 
+    // ── Abonos previos ────────────────────────────────────────────
+    // Sin estos campos la cobranza ignoraba los pagos parciales ya
+    // registrados y proponía cobrar el importe completo, que la API
+    // rechaza por exceder el saldo.
+    private BigDecimal totalAbonado;
+    private BigDecimal saldoPendiente;
+    private int        numAbonos;
+
     // ── Préstamo ──────────────────────────────────────────────────
     private UUID   prestamoId;
     private String prestamoNumero;
