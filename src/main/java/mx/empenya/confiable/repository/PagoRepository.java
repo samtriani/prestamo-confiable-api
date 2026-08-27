@@ -21,7 +21,7 @@ public interface PagoRepository extends JpaRepository<Pago, UUID> {
 
     @Query("""
         SELECT p FROM Pago p
-        WHERE p.estado IN ('PENDIENTE', 'PROXIMO', 'ATRASADO', 'PAGADO_SIN_CORTE')
+        WHERE p.estado IN ('PENDIENTE', 'PROXIMO', 'ATRASADO', 'ABONO_PARCIAL', 'PAGADO_SIN_CORTE')
         AND p.fechaProgramada < :hoy
         AND p.id NOT IN (
             SELECT a.pago.id FROM Abono a

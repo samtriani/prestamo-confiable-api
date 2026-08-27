@@ -86,8 +86,14 @@ public class AbonoService {
      *
      * Reglas:
      * - suma abonos >= monto → PAGADO_SIN_CORTE (naranja, pendiente de corte)
-     * - suma abonos < monto Y fecha venció → ATRASADO (rojo)
-     * - suma abonos < monto Y fecha futura → PROXIMO o PENDIENTE (sin cambio)
+     * - 0 < suma abonos < monto → ABONO_PARCIAL (amarillo), venza o no
+     * - suma abonos = 0 Y fecha venció → ATRASADO (rojo)
+     * - suma abonos = 0 Y fecha futura → PROXIMO o PENDIENTE (sin cambio)
+     *
+     * ABONO_PARCIAL gana sobre ATRASADO a propósito: un pago vencido con
+     * dinero encima no puede verse igual que uno donde el cliente no ha
+     * dado nada. Los consumidores que arman la cobranza tratan ambos
+     * estados como "por cobrar".
      */
     public void recalcularEstado(Pago pago) {
         BigDecimal totalAbonado = abonoRepository.sumMontoByPagoId(pago.getId());
@@ -95,6 +101,8 @@ public class AbonoService {
 
         if (totalAbonado.compareTo(pago.getMontoProgramado()) >= 0) {
             nuevoEstado = EstadoPago.PAGADO_SIN_CORTE;
+        } else if (totalAbonado.signum() > 0) {
+            nuevoEstado = EstadoPago.ABONO_PARCIAL;
         } else if (pago.getFechaProgramada().isBefore(LocalDateTime.now().toLocalDate())) {
             nuevoEstado = EstadoPago.ATRASADO;
         } else {
@@ -115,8 +123,11 @@ public class AbonoService {
         List<Pago> pagosDelPrestamo = pagoRepository
             .findByPrestamoIdOrderByNumeroPagoAsc(pagoActual.getPrestamo().getId());
 
+        // Un pago con abono parcial ya es el que se está cobrando, así que
+        // cuenta como "próximo" y evita adelantar el marcador a otro pago.
         boolean hayProximo = pagosDelPrestamo.stream()
-            .anyMatch(p -> p.getEstado() == EstadoPago.PROXIMO);
+            .anyMatch(p -> p.getEstado() == EstadoPago.PROXIMO
+                        || p.getEstado() == EstadoPago.ABONO_PARCIAL);
 
         if (!hayProximo) {
             pagosDelPrestamo.stream()

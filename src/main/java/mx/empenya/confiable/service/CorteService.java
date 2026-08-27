@@ -42,6 +42,10 @@ public class CorteService {
      * 3. Asigna corte_id a todos esos abonos → pasan de naranja a verde
      * 4. Actualiza estado de pagos: PAGADO_SIN_CORTE → PAGADO
      * 5. El acumulado semanal queda en 0 (histórico conservado en la tabla cortes)
+     *
+     * Los pagos en ABONO_PARCIAL conservan su estado: su abono entra al corte
+     * (es dinero cobrado) pero el pago sigue incompleto, así que se queda
+     * amarillo en la corrida en vez de desaparecer del radar.
      */
     @Transactional
     public Corte realizarCorte(CorteRequest request) {
@@ -147,8 +151,12 @@ public class CorteService {
     }
 
     /**
-     * Job automático que corre cada día a las 00:05 para marcar como
-     * ATRASADO los pagos cuya fecha venció sin estar cubiertos.
+     * Job automático que corre cada día a las 00:05 para poner al día el
+     * estado de los pagos cuya fecha venció sin estar cubiertos.
+     *
+     * Delega en recalcularEstado en vez de forzar ATRASADO: un pago vencido
+     * con abonos encima debe quedar en ABONO_PARCIAL, no perder esa marca
+     * cada noche.
      */
     @Scheduled(cron = "0 5 0 * * *", zone = "America/Mexico_City")
     @Transactional
@@ -156,12 +164,7 @@ public class CorteService {
         List<Pago> vencidos = pagoRepository.findPagosVencidosSinCubrir(LocalDate.now());
         if (vencidos.isEmpty()) return;
 
-        vencidos.forEach(pago -> {
-            if (pago.getEstado() != EstadoPago.ATRASADO) {
-                pago.setEstado(EstadoPago.ATRASADO);
-                pagoRepository.save(pago);
-            }
-        });
-        log.info("Job estados: {} pagos marcados como ATRASADO", vencidos.size());
+        vencidos.forEach(abonoService::recalcularEstado);
+        log.info("Job estados: {} pagos vencidos recalculados", vencidos.size());
     }
 }
