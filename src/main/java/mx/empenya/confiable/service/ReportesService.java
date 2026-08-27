@@ -58,7 +58,8 @@ public class ReportesService {
 
         long prestamosAtrasados = activos.stream()
                 .filter(p -> p.getPagos().stream()
-                        .anyMatch(pg -> pg.getEstado() == EstadoPago.ATRASADO))
+                        .anyMatch(pg -> pg.getEstado() == EstadoPago.ATRASADO
+                                     || pg.getEstado() == EstadoPago.ABONO_PARCIAL))
                 .count();
 
         long prestamosAlCorriente = prestamosActivos - prestamosAtrasados;
@@ -83,7 +84,8 @@ public class ReportesService {
                             .max(BigDecimal.ZERO);
 
                     int atrasados = (int) pagos.stream()
-                            .filter(pag -> pag.getEstado() == EstadoPago.ATRASADO)
+                            .filter(pag -> pag.getEstado() == EstadoPago.ATRASADO
+                                        || pag.getEstado() == EstadoPago.ABONO_PARCIAL)
                             .count();
 
                     return TopDeudor.builder()

@@ -85,8 +85,14 @@ public class ClienteService {
             .filter(pag -> pag.getEstado() == EstadoPago.PAGADO)
             .count();
 
+        // Vencidos sin un solo peso encima. Los que traen abono parcial se
+        // cuentan aparte para no confundirlos con estos en la corrida.
         int pagosAtrasados = (int) pagos.stream()
             .filter(pag -> pag.getEstado() == EstadoPago.ATRASADO)
+            .count();
+
+        int pagosParciales = (int) pagos.stream()
+            .filter(pag -> pag.getEstado() == EstadoPago.ABONO_PARCIAL)
             .count();
 
         BigDecimal totalAbonado = pagos.stream()
@@ -94,8 +100,10 @@ public class ClienteService {
             .map(Abono::getMontoAbono)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // Todo el dinero cobrado que aún no entra a un corte, sin importar si
+        // el pago quedó cubierto. Antes se filtraba por PAGADO_SIN_CORTE y los
+        // abonos de pagos incompletos no aparecían por ningún lado.
         BigDecimal semanalSinCorte = pagos.stream()
-            .filter(pag -> pag.getEstado() == EstadoPago.PAGADO_SIN_CORTE)
             .flatMap(pag -> pag.getAbonos() != null ? pag.getAbonos().stream() : Stream.empty())
             .filter(a -> a.getCorte() == null)
             .map(Abono::getMontoAbono)
@@ -123,6 +131,7 @@ public class ClienteService {
             .totalPagos(TOTAL_PAGOS)
             .pagosCubiertos(pagosCubiertos)
             .pagosSinCorte(pagosSinCorte)
+            .pagosParciales(pagosParciales)
             .pagosAtrasados(pagosAtrasados)
             .totalAbonado(totalAbonado)
             .saldoPendiente(saldoPendiente)

@@ -38,18 +38,26 @@ CREATE TABLE prestamos (
 -- ============================================================
 -- PAGOS (14 registros por préstamo, generados automáticamente)
 -- ============================================================
+-- Tipo ENUM nativo. La entidad Pago lo mapea con
+-- @JdbcType(PostgreSQLEnumJdbcType.class), así que la columna NO puede ser
+-- VARCHAR. Agregar un estado nuevo requiere ALTER TYPE, no basta con tocar
+-- el enum de Java.
+CREATE TYPE estado_pago AS ENUM (
+    'PENDIENTE',         -- pago futuro sin vencer
+    'PROXIMO',           -- siguiente pago a cobrar
+    'ABONO_PARCIAL',     -- tiene abonos que no cubren el monto (amarillo)
+    'PAGADO_SIN_CORTE',  -- pagado pero aún no entra al corte (naranja)
+    'PAGADO',            -- pagado y ya en corte semanal (verde)
+    'ATRASADO'           -- fecha venció y no tiene ningún abono (rojo)
+);
+
 CREATE TABLE pagos (
     id                UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
     prestamo_id       UUID         NOT NULL REFERENCES prestamos(id),
     numero_pago       INTEGER      NOT NULL CHECK (numero_pago BETWEEN 1 AND 14),
     fecha_programada  DATE         NOT NULL,
     monto_programado  DECIMAL(12,2) NOT NULL,
-    estado            VARCHAR(20)  NOT NULL DEFAULT 'PENDIENTE',
-    -- PENDIENTE       → pago futuro sin vencer
-    -- PROXIMO         → siguiente pago a cobrar
-    -- PAGADO_SIN_CORTE → pagado pero aún no entra al corte (naranja)
-    -- PAGADO          → pagado y ya en corte semanal (verde)
-    -- ATRASADO        → fecha venció y no está pagado completo (rojo)
+    estado            estado_pago  NOT NULL DEFAULT 'PENDIENTE',
     created_at        TIMESTAMP    NOT NULL DEFAULT NOW(),
     updated_at        TIMESTAMP    NOT NULL DEFAULT NOW(),
     UNIQUE (prestamo_id, numero_pago)

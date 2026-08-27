@@ -31,7 +31,9 @@ public class DashboardService {
         data.put("totalPrestadoHistorico",prestamoRepository.sumMontoHistorico());
         data.put("totalRecuperado",       abonoRepository.sumTotalRecuperado());
         data.put("totalSemanalActual",    abonoRepository.sumTotalSemanalActual());
-        data.put("pagosAtrasados",        pagoRepository.countByEstado(EstadoPago.ATRASADO));
+        // Un abono parcial vencido sigue siendo cartera por cobrar.
+        data.put("pagosAtrasados",        pagoRepository.countByEstado(EstadoPago.ATRASADO)
+                                        + pagoRepository.countByEstado(EstadoPago.ABONO_PARCIAL));
         data.put("abonosPendientesCorte", abonoRepository.countByCorteIdIsNull());
         data.put("pagosPendientes",       pagoRepository.countByEstado(EstadoPago.PROXIMO)
                                         + pagoRepository.countByEstado(EstadoPago.PENDIENTE));

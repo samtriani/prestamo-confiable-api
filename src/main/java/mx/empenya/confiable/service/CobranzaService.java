@@ -28,7 +28,7 @@ public class CobranzaService {
     @Transactional(readOnly = true)
     public List<CobranzaItemResponse> getCobranzaSemana() {
         List<Pago> pagos = pagoRepository.findByEstadosConDetalle(
-            List.of(EstadoPago.PROXIMO, EstadoPago.ATRASADO)
+            List.of(EstadoPago.PROXIMO, EstadoPago.ATRASADO, EstadoPago.ABONO_PARCIAL)
         );
 
         if (pagos.isEmpty()) return List.of();
@@ -48,7 +48,10 @@ public class CobranzaService {
 
         return pagos.stream()
             .map(p -> {
-                boolean atrasado = p.getEstado() == EstadoPago.ATRASADO;
+                // Un parcial vencido sigue devengando días de atraso.
+                boolean atrasado = p.getEstado() == EstadoPago.ATRASADO
+                    || (p.getEstado() == EstadoPago.ABONO_PARCIAL
+                        && p.getFechaProgramada().isBefore(hoy));
                 int dias = atrasado
                     ? (int) ChronoUnit.DAYS.between(p.getFechaProgramada(), hoy)
                     : 0;

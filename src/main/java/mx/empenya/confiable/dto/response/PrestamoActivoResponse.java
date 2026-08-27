@@ -27,6 +27,8 @@ public class PrestamoActivoResponse {
     private int        totalPagos;
     private int        pagosCubiertos;
     private int        pagosSinCorte;
+    /** Pagos vencidos o no con abonos que no alcanzan el monto programado. */
+    private int        pagosParciales;
     private int        pagosAtrasados;
     private BigDecimal totalAbonado;
     private BigDecimal saldoPendiente;
